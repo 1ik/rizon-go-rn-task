@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rizon-postgres
+    environment:
+      POSTGRES_USER: rizon
+      POSTGRES_PASSWORD: rizon_dev_password
+      POSTGRES_DB: rizon_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - rizon-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rizon-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - rizon-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rizon-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: rizon
+      RABBITMQ_DEFAULT_PASS: rizon_dev_password
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI port
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    networks:
+      - rizon-network
+
+networks:
+  rizon-network:
+    driver: bridge

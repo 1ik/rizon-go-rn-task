@@ -1,0 +1,11 @@
+-- +goose Up
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- +goose Down
+DROP INDEX IF EXISTS idx_users_email;
+DROP TABLE IF EXISTS users;
