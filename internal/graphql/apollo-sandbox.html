@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apollo Sandbox</title>
+    <link rel="stylesheet" href="https://embeddable-sandbox.cdn.apollographql.com/_latest/embeddable-sandbox.css" />
+</head>
+<body>
+    <div id="embedded-sandbox" style="position:absolute;top:0;right:0;bottom:0;left:0"></div>
+    <script src="https://embeddable-sandbox.cdn.apollographql.com/_latest/embeddable-sandbox.umd.production.min.js"></script>
+    <script>
+        // Wait for the script to load before initializing
+        (function() {
+            function initSandbox() {
+                if (window.EmbeddedSandbox) {
+                    new window.EmbeddedSandbox({
+                        target: "#embedded-sandbox",
+                        initialEndpoint: window.location.origin + '/graphql',
+                    });
+                } else {
+                    // Retry after a short delay if script hasn't loaded yet
+                    setTimeout(initSandbox, 100);
+                }
+            }
+            
+            // Start initialization when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSandbox);
+            } else {
+                // DOM already loaded, wait a bit for script to be available
+                setTimeout(initSandbox, 100);
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -62,6 +62,12 @@ tasks:
     cmds:
       - ./tools/show-schema.sh
 
+  # GraphQL tasks
+  gql:gen:
+    desc: Generate GraphQL types
+    cmds:
+      - $(go env GOPATH)/bin/gqlgen generate
+
   # Development tasks
   dev:
     desc: Run development server

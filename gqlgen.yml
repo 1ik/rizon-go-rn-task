@@ -1,0 +1,30 @@
+# Where are all the schema files located? globs are supported eg  src/**/*.graphqls
+schema:
+  - internal/graphql/schema.graphqls
+
+# Where should the generated server code go?
+exec:
+  filename: internal/graphql/generated/generated.go
+  package: generated
+
+# Uncomment to enable federation
+# federation:
+#   filename: graph/generated/federation.go
+#   package: generated
+
+# Where should any generated models go?
+model:
+  filename: internal/graphql/model/models_gen.go
+  package: model
+
+# Where should the resolver implementations go?
+resolver:
+  layout: follow-schema
+  dir: internal/graphql
+  package: graphql
+
+# Optional: turn on use ` + "`" + ` + "`" + `go run` + "`" + ` + "`" + ` to run
+# gqlgen within project. Does not work with bazel or other build systems that
+# don't support ` + "`" + ` + "`" + `go run` + "`" + ` + "`" + `.
+# gqlgen:
+#   version: v0.17.86
