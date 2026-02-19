@@ -1,8 +1,15 @@
 package graphql
 
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require
-// here.
+import (
+	"rizon-test-task/internal/app"
+)
 
-type Resolver struct{}
+// Resolver is the GraphQL resolver. It delegates to the app (API gateway only).
+type Resolver struct {
+	App app.App
+}
+
+// NewResolver returns a resolver that uses the given app for all business operations.
+func NewResolver(a app.App) *Resolver {
+	return &Resolver{App: a}
+}

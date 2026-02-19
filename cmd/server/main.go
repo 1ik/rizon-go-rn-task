@@ -5,19 +5,27 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/rs/cors"
+	"rizon-test-task/internal/app"
 	"rizon-test-task/internal/config"
 	"rizon-test-task/internal/graphql"
 	"rizon-test-task/internal/graphql/generated"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/rs/cors"
 )
 
 func main() {
 	cfg := config.GetServerConfig()
 
-	// Initialize GraphQL resolver
-	resolver := &graphql.Resolver{}
+	// Initialize app; inject into GraphQL
+	application, err := app.New()
+	if err != nil {
+		log.Fatal("failed to initialize app:", err)
+	}
+	defer application.Close()
+
+	resolver := graphql.NewResolver(application)
 
 	// Create GraphQL executable schema
 	executableSchema := generated.NewExecutableSchema(generated.Config{

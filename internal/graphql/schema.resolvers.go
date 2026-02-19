@@ -12,7 +12,7 @@ import (
 
 // Hello is the resolver for the hello field.
 func (r *queryResolver) Hello(ctx context.Context) (string, error) {
-	return "Hello, World!", nil
+	return r.App.Hello(ctx)
 }
 
 // Query returns generated.QueryResolver implementation.
