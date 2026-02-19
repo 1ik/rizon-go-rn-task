@@ -7,8 +7,11 @@ import (
 
 	"rizon-test-task/internal/app"
 	"rizon-test-task/internal/config"
+	"rizon-test-task/internal/database"
 	"rizon-test-task/internal/graphql"
 	"rizon-test-task/internal/graphql/generated"
+	"rizon-test-task/internal/in_memory_storage"
+	"rizon-test-task/internal/repository/postgres"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -18,11 +21,25 @@ import (
 func main() {
 	cfg := config.GetServerConfig()
 
-	// Initialize app; inject into GraphQL
-	application, err := app.New()
+	// Initialize database
+	db, err := database.Connect()
 	if err != nil {
-		log.Fatal("failed to initialize app:", err)
+		log.Fatal("failed to connect to database:", err)
 	}
+	defer database.Close()
+
+	// Initialize in-memory storage
+	store, err := in_memory_storage.NewStore()
+	if err != nil {
+		log.Fatal("failed to initialize in-memory storage:", err)
+	}
+	defer in_memory_storage.Close()
+
+	// Create repository
+	userRepo := postgres.NewUserRepository(db)
+
+	// Initialize app with dependencies
+	application := app.New(userRepo, store)
 	defer application.Close()
 
 	resolver := graphql.NewResolver(application)

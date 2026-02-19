@@ -3,10 +3,8 @@ package app
 import (
 	"context"
 
-	"rizon-test-task/internal/database"
 	"rizon-test-task/internal/in_memory_storage"
-
-	"gorm.io/gorm"
+	"rizon-test-task/internal/repository"
 )
 
 // App is the application business API. GraphQL and other adapters call only these methods.
@@ -17,28 +15,17 @@ type App interface {
 
 // appImpl holds wired dependencies and implements App.
 type appImpl struct {
-	db    *gorm.DB
-	store in_memory_storage.Store
+	userRepo repository.UserRepository
+	store    in_memory_storage.Store
 }
 
-// New creates and wires all dependencies (database, in-memory storage backed by Redis).
+// New creates the app with provided dependencies.
 // Returns the App interface. Call Close() when shutting down.
-func New() (App, error) {
-	db, err := database.Connect()
-	if err != nil {
-		return nil, err
-	}
-
-	store, err := in_memory_storage.NewStore()
-	if err != nil {
-		_ = database.Close()
-		return nil, err
-	}
-
+func New(userRepo repository.UserRepository, store in_memory_storage.Store) App {
 	return &appImpl{
-		db:    db,
-		store: store,
-	}, nil
+		userRepo: userRepo,
+		store:    store,
+	}
 }
 
 // Hello returns a greeting (business function).
@@ -48,8 +35,5 @@ func (a *appImpl) Hello(ctx context.Context) (string, error) {
 
 // Close releases all connections. Call from shutdown.
 func (a *appImpl) Close() error {
-	if err := in_memory_storage.Close(); err != nil {
-		return err
-	}
-	return database.Close()
+	return in_memory_storage.Close()
 }
