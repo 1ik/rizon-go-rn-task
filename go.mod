@@ -4,8 +4,11 @@ go 1.25.1
 
 require (
 	github.com/99designs/gqlgen v0.17.86
+	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.11.2
 	github.com/pressly/goose/v3 v3.26.0
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/rs/cors v1.11.1
 	github.com/vektah/gqlparser/v2 v2.5.31
@@ -27,9 +30,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
-	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect

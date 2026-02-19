@@ -24,7 +24,7 @@ var (
 type App interface {
 	Hello(ctx context.Context) (string, error)
 	GenerateEmailAuthLink(ctx context.Context, email string) error
-	VerifyEmailAuth(ctx context.Context, email, secret string) (string, error)
+	EmailAuth(ctx context.Context, email, secret string) (string, error)
 	Close() error
 }
 

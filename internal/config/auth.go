@@ -10,6 +10,8 @@ type AuthConfig struct {
 	EmailAuthExpiration time.Duration
 	EmailAuthEndpoint   string
 	BaseURL             string
+	JWTSecret           string
+	JWTExpiration       time.Duration
 }
 
 // GetAuthConfig returns authentication configuration from environment or defaults
@@ -26,10 +28,19 @@ func GetAuthConfig(serverCfg *ServerConfig) *AuthConfig {
 	// Use BaseURL from server config (which handles env var or defaults to localhost:port)
 	baseURL := serverCfg.BaseURL
 
+	// JWT configuration
+	jwtSecret := getEnv("JWT_SECRET", "")
+	if jwtSecret == "" {
+		// In production, this should be required
+		jwtSecret = "default-dev-jwt-secret-change-in-production"
+	}
+
 	return &AuthConfig{
 		EmailAuthSalt:       salt,
 		EmailAuthExpiration: 1 * time.Minute,
 		EmailAuthEndpoint:   endpoint,
 		BaseURL:             baseURL,
+		JWTSecret:           jwtSecret,
+		JWTExpiration:       7 * 24 * time.Hour, // 7 days
 	}
 }

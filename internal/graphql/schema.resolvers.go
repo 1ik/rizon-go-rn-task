@@ -7,6 +7,10 @@ package graphql
 
 import (
 	"context"
+	"errors"
+	"log"
+
+	"rizon-test-task/internal/app"
 	"rizon-test-task/internal/graphql/generated"
 )
 
@@ -16,6 +20,24 @@ func (r *mutationResolver) RequestEmailAuthLink(ctx context.Context, email strin
 		return false, err
 	}
 	return true, nil
+}
+
+// LoginWithEmailAndSecret is the resolver for the loginWithEmailAndSecret field.
+func (r *mutationResolver) LoginWithEmailAndSecret(ctx context.Context, email string, secret string) (string, error) {
+	token, err := r.App.EmailAuth(ctx, email, secret)
+	if err != nil {
+		// Check for known sentinel errors - these are user-friendly and can be returned as-is
+		if errors.Is(err, app.ErrEmailAuthNotFound) ||
+			errors.Is(err, app.ErrEmailAuthInvalidSecret) {
+			return "", err
+		}
+
+		// Log unexpected errors for debugging
+		log.Printf("Error: failed to authenticate user with email %s: %v", email, err)
+		return "", err
+	}
+
+	return token, nil
 }
 
 // Hello is the resolver for the hello field.

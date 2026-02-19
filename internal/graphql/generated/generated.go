@@ -46,7 +46,8 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		RequestEmailAuthLink func(childComplexity int, email string) int
+		LoginWithEmailAndSecret func(childComplexity int, email string, secret string) int
+		RequestEmailAuthLink    func(childComplexity int, email string) int
 	}
 
 	Query struct {
@@ -56,6 +57,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	RequestEmailAuthLink(ctx context.Context, email string) (bool, error)
+	LoginWithEmailAndSecret(ctx context.Context, email string, secret string) (string, error)
 }
 type QueryResolver interface {
 	Hello(ctx context.Context) (string, error)
@@ -80,6 +82,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Mutation.loginWithEmailAndSecret":
+		if e.complexity.Mutation.LoginWithEmailAndSecret == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_loginWithEmailAndSecret_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LoginWithEmailAndSecret(childComplexity, args["email"].(string), args["secret"].(string)), true
 	case "Mutation.requestEmailAuthLink":
 		if e.complexity.Mutation.RequestEmailAuthLink == nil {
 			break
@@ -209,6 +222,7 @@ var sources = []*ast.Source{
 
 type Mutation {
   requestEmailAuthLink(email: String!): Boolean!
+  loginWithEmailAndSecret(email: String!, secret: String!): String!
 }
 `, BuiltIn: false},
 }
@@ -217,6 +231,22 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_loginWithEmailAndSecret_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "email", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["email"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "secret", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["secret"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_requestEmailAuthLink_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -327,6 +357,47 @@ func (ec *executionContext) fieldContext_Mutation_requestEmailAuthLink(ctx conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_requestEmailAuthLink_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_loginWithEmailAndSecret(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_loginWithEmailAndSecret,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().LoginWithEmailAndSecret(ctx, fc.Args["email"].(string), fc.Args["secret"].(string))
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_loginWithEmailAndSecret(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_loginWithEmailAndSecret_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1946,6 +2017,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "requestEmailAuthLink":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_requestEmailAuthLink(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "loginWithEmailAndSecret":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_loginWithEmailAndSecret(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

@@ -8,6 +8,13 @@ import (
 	"log"
 	"net/url"
 	"regexp"
+	"strconv"
+	"time"
+
+	"rizon-test-task/internal/models"
+	"rizon-test-task/internal/repository"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var (
@@ -74,10 +81,10 @@ func (a *appImpl) GenerateEmailAuthLink(ctx context.Context, email string) error
 	return nil
 }
 
-// VerifyEmailAuth verifies an email authentication link by checking if the email exists
+// EmailAuth verifies an email authentication link by checking if the email exists
 // in Redis and if the provided secret matches the stored hash.
-// Returns the auth link URL on successful verification.
-func (a *appImpl) VerifyEmailAuth(ctx context.Context, email, secret string) (string, error) {
+// If verification succeeds, it creates the user if they don't exist and returns a JWT token.
+func (a *appImpl) EmailAuth(ctx context.Context, email, secret string) (string, error) {
 	// Validate email format
 	if !isValidEmail(email) {
 		return "", fmt.Errorf("invalid email format")
@@ -103,15 +110,48 @@ func (a *appImpl) VerifyEmailAuth(ctx context.Context, email, secret string) (st
 		return "", ErrEmailAuthInvalidSecret
 	}
 
-	// Build and return the auth link URL
-	values := url.Values{}
-	values.Set("email", email)
-	values.Set("secret", secret)
-	path := "/" + a.authCfg.EmailAuthEndpoint + "?" + values.Encode()
-	uri := a.authCfg.BaseURL + path
+	// Verification successful - find or create user
+	user, err := a.userRepo.FindByEmail(ctx, email)
+	if err != nil {
+		if err == repository.ErrUserNotFound {
+			// User doesn't exist, create them
+			user = &models.User{
+				Email: email,
+			}
+			if err := a.userRepo.Create(ctx, user); err != nil {
+				return "", fmt.Errorf("failed to create user: %w", err)
+			}
+		} else {
+			return "", fmt.Errorf("failed to find user: %w", err)
+		}
+	}
 
-	// Verification successful - email remains in Redis (deletion handled by expiration)
-	return uri, nil
+	// Generate JWT token
+	token, err := a.generateJWT(user.ID, user.Email)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate JWT: %w", err)
+	}
+
+	return token, nil
+}
+
+// generateJWT creates a JWT token with user ID and email claims.
+func (a *appImpl) generateJWT(userID uint, email string) (string, error) {
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"user_id": strconv.FormatUint(uint64(userID), 10),
+		"email":   email,
+		"iat":     now.Unix(),
+		"exp":     now.Add(a.authCfg.JWTExpiration).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(a.authCfg.JWTSecret))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+
+	return tokenString, nil
 }
 
 // publishEmailAuthJob publishes an email authentication job to the message broker.
