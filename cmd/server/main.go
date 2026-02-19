@@ -11,14 +11,22 @@ import (
 	"rizon-test-task/internal/graphql"
 	"rizon-test-task/internal/graphql/generated"
 	"rizon-test-task/internal/in_memory_storage"
+	"rizon-test-task/internal/message_broker"
 	"rizon-test-task/internal/repository/postgres"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		// .env file is optional - continue if it doesn't exist
+		log.Println("Warning: .env file not found, using environment variables")
+	}
+
 	cfg := config.GetServerConfig()
 
 	// Initialize database
@@ -38,11 +46,21 @@ func main() {
 	// Create repository
 	userRepo := postgres.NewUserRepository(db)
 
-	// Load auth configuration
-	authCfg := config.GetAuthConfig()
+	// Load auth configuration (pass server config for BaseURL)
+	authCfg := config.GetAuthConfig(cfg)
+
+	// Load RabbitMQ configuration
+	rabbitMQCfg := config.GetRabbitMQConfig()
+
+	// Initialize message broker (RabbitMQ)
+	messageBroker, err := message_broker.NewRabbitMQBroker(rabbitMQCfg)
+	if err != nil {
+		log.Fatal("failed to initialize message broker:", err)
+	}
+	defer messageBroker.Close()
 
 	// Initialize app with dependencies
-	application := app.New(userRepo, store, authCfg)
+	application := app.New(userRepo, store, authCfg, messageBroker)
 	defer application.Close()
 
 	resolver := graphql.NewResolver(application)
@@ -92,7 +110,8 @@ func main() {
 
 		// Verify email auth
 		ctx := r.Context()
-		if err := application.VerifyEmailAuth(ctx, email, secret); err != nil {
+		authLink, err := application.VerifyEmailAuth(ctx, email, secret)
+		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			fmt.Fprintf(w, `{"error":"%s"}`, err.Error())
@@ -102,7 +121,7 @@ func main() {
 		// Verification successful
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"verified","email":"%s"}`, email)
+		fmt.Fprintf(w, `{"status":"verified","email":"%s","link":"%s"}`, email, authLink)
 	})
 
 	// GraphQL endpoint with CORS

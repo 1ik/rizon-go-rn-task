@@ -75,6 +75,13 @@ func (s *redisStore) Exists(ctx context.Context, key string) (bool, error) {
 	return count > 0, nil
 }
 
+func (s *redisStore) Delete(ctx context.Context, key string) error {
+	if err := s.client.Del(ctx, key).Err(); err != nil {
+		return fmt.Errorf("failed to delete key %s: %w", key, err)
+	}
+	return nil
+}
+
 // NewStore returns an in-memory Store, initializing the backend (Redis) under the hood.
 // Callers use the returned Store without knowing which backend is used.
 func NewStore() (Store, error) {

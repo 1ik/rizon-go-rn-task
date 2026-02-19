@@ -7,13 +7,23 @@ import (
 
 // ServerConfig holds server configuration
 type ServerConfig struct {
-	Port string
+	Port    string
+	BaseURL string
 }
 
 // GetServerConfig returns server configuration from environment or defaults
 func GetServerConfig() *ServerConfig {
+	port := getEnv("PORT", "8080")
+	
+	baseURL := getEnv("BASE_URL", "")
+	if baseURL == "" {
+		// Default to localhost with port if BASE_URL not set
+		baseURL = fmt.Sprintf("http://localhost:%s", port)
+	}
+
 	return &ServerConfig{
-		Port: getEnv("PORT", "8080"),
+		Port:    port,
+		BaseURL: baseURL,
 	}
 }
 

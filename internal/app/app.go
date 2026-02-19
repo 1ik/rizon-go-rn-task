@@ -6,6 +6,7 @@ import (
 
 	"rizon-test-task/internal/config"
 	"rizon-test-task/internal/in_memory_storage"
+	"rizon-test-task/internal/message_broker"
 	"rizon-test-task/internal/repository"
 )
 
@@ -23,24 +24,26 @@ var (
 type App interface {
 	Hello(ctx context.Context) (string, error)
 	GenerateEmailAuthLink(ctx context.Context, email string) error
-	VerifyEmailAuth(ctx context.Context, email, secret string) error
+	VerifyEmailAuth(ctx context.Context, email, secret string) (string, error)
 	Close() error
 }
 
 // appImpl holds wired dependencies and implements App.
 type appImpl struct {
-	userRepo repository.UserRepository
-	store    in_memory_storage.Store
-	authCfg  *config.AuthConfig
+	userRepo      repository.UserRepository
+	store         in_memory_storage.Store
+	authCfg       *config.AuthConfig
+	messageBroker message_broker.MessageBroker
 }
 
 // New creates the app with provided dependencies.
 // Returns the App interface. Call Close() when shutting down.
-func New(userRepo repository.UserRepository, store in_memory_storage.Store, authCfg *config.AuthConfig) App {
+func New(userRepo repository.UserRepository, store in_memory_storage.Store, authCfg *config.AuthConfig, messageBroker message_broker.MessageBroker) App {
 	return &appImpl{
-		userRepo: userRepo,
-		store:    store,
-		authCfg:  authCfg,
+		userRepo:      userRepo,
+		store:         store,
+		authCfg:       authCfg,
+		messageBroker: messageBroker,
 	}
 }
 
@@ -51,5 +54,8 @@ func (a *appImpl) Hello(ctx context.Context) (string, error) {
 
 // Close releases all connections. Call from shutdown.
 func (a *appImpl) Close() error {
+	if err := a.messageBroker.Close(); err != nil {
+		return err
+	}
 	return in_memory_storage.Close()
 }
