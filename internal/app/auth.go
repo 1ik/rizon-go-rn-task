@@ -117,10 +117,9 @@ func (a *appImpl) VerifyEmailAuth(ctx context.Context, email, secret string) (st
 // publishEmailAuthJob publishes an email authentication job to the message broker.
 // Returns an error if publishing fails.
 func (a *appImpl) publishEmailAuthJob(ctx context.Context, email, authLink string) error {
-	subject := "Rizon: Your Email Authentication Link"
+	subject := "Rizon: Your App Authentication Link"
 	body := fmt.Sprintf(`
-		<h2>Email Authentication</h2>
-		<p>Click the link below to authenticate:</p>
+		<p>Please Click the link below to sign in to your app:</p>
 		<p><a href="%s">%s</a></p>
 		<p>This link will expire in 30 minutes.</p>
 	`, authLink, authLink)

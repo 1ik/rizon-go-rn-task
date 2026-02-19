@@ -121,8 +121,13 @@ func buildEmailMessage(from, to, subject, body string) string {
 	subject = escapeHeader(subject)
 
 	// Determine content type based on body
+	// Check for HTML tags (not just <html> tag, but any HTML tags)
 	contentType := "text/plain; charset=UTF-8"
-	if strings.Contains(body, "<html") || strings.Contains(body, "<HTML") {
+	if strings.Contains(body, "<html") || strings.Contains(body, "<HTML") ||
+		strings.Contains(body, "<h2>") || strings.Contains(body, "<H2>") ||
+		strings.Contains(body, "<p>") || strings.Contains(body, "<P>") ||
+		strings.Contains(body, "<a ") || strings.Contains(body, "<A ") ||
+		strings.Contains(body, "<div") || strings.Contains(body, "<DIV") {
 		contentType = "text/html; charset=UTF-8"
 	}
 

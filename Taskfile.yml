@@ -17,6 +17,17 @@ tasks:
     cmds:
       - go build -o bin/server ./cmd/server
 
+  # Worker tasks
+  worker:run:
+    desc: Run the email worker
+    cmds:
+      - go run ./cmd/worker
+
+  worker:build:
+    desc: Build the email worker
+    cmds:
+      - go build -o bin/worker ./cmd/worker
+
   # Dependency tasks
   deps:tidy:
     desc: Tidy Go dependencies
@@ -70,6 +81,7 @@ tasks:
 
   # Development tasks
   dev:
-    desc: Run development server
-    deps:
+    desc: Run development server and worker
+    cmds:
       - task: server:run
+      - task: worker:run

@@ -14,9 +14,16 @@ import (
 	"rizon-test-task/internal/message_broker"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		// .env file is optional - continue if it doesn't exist
+		log.Println("Warning: .env file not found, using environment variables")
+	}
+
 	log.Println("Starting email worker...")
 
 	// Load email configuration
@@ -49,7 +56,11 @@ func main() {
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
-		nil,       // arguments
+		amqp.Table{
+			// Consumer timeout: 1 minute (60000 milliseconds)
+			// If a message is not acked within this time, RabbitMQ will redeliver it
+			"x-consumer-timeout": 60000, // 1 minute in milliseconds
+		},
 	)
 	if err != nil {
 		log.Fatal("failed to declare queue:", err)
@@ -85,16 +96,22 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	// Process messages
-	go func() {
-		for msg := range msgs {
+	// Use select to listen to both message channel and shutdown signal
+	for {
+		select {
+		case msg, ok := <-msgs:
+			if !ok {
+				// Channel closed (connection lost)
+				log.Println("Message channel closed, exiting...")
+				return
+			}
 			processEmailJob(context.Background(), emailSender, msg)
+		case sig := <-sigChan:
+			// user clicked Ctrl+C or SIGTERM. exit the program
+			log.Printf("Received signal: %v, shutting down...", sig)
+			return
 		}
-	}()
-
-	// Wait for interrupt signal
-	<-sigChan
-	log.Println("Shutting down email worker...")
+	}
 }
 
 func processEmailJob(ctx context.Context, emailSender email.EmailSender, msg amqp.Delivery) {
@@ -113,14 +130,14 @@ func processEmailJob(ctx context.Context, emailSender email.EmailSender, msg amq
 
 	if err := emailSender.SendEmail(emailCtx, job.To, job.Subject, job.Body); err != nil {
 		log.Printf("Error: failed to send email to %s: %v", job.To, err)
-		msg.Nack(false, true) // Reject and requeue for retry
+		log.Printf("Message will be redelivered after consumer timeout (1 minute)")
 		return
 	}
 
 	// Acknowledge message
 	if err := msg.Ack(false); err != nil {
 		log.Printf("Error: failed to acknowledge message: %v", err)
-	} else {
-		log.Printf("Successfully sent email to %s", job.To)
+		return
 	}
+	log.Printf("Successfully sent email to %s", job.To)
 }

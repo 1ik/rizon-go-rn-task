@@ -45,13 +45,18 @@ func NewRabbitMQBroker(cfg *config.RabbitMQConfig) (MessageBroker, error) {
 	}
 
 	// Declare queue (idempotent - will create if doesn't exist)
+	// Configure consumer timeout for delayed redelivery on failures
 	_, err = channel.QueueDeclare(
 		emailQueueName, // name
 		true,           // durable
 		false,          // delete when unused
 		false,          // exclusive
 		false,          // no-wait
-		nil,            // arguments
+		amqp.Table{
+			// Consumer timeout: 1 minute (60000 milliseconds)
+			// If a message is not acked within this time, RabbitMQ will redeliver it
+			"x-consumer-timeout": 60000, // 1 minute in milliseconds
+		},
 	)
 	if err != nil {
 		channel.Close()
