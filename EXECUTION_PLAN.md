@@ -272,9 +272,8 @@ This document breaks down the development into two phases with granular subtasks
 1. **Email Auth Hash Generation**
    - Generate hash using SHA-256: hash = SHA-256(email, salt)
    - Same email + same salt = same hash (deterministic)
-   - Storage structure: In-memory map with email as key, hash as value
-   - Format: email => hash (with expiration)
-   - Scheduled cleanup: When hash is created, schedule a background task to delete it after expires_at
+   - Storage structure: In-memory map with email as key, hash as value, with expiration. Redis will automatically expire the key. e.g. after expiration the key will not be found.
+   - Format: email => hash
    - Rate limiting: If email exists in map, don't send link again (rate limit)
    - Email auth format: `/email-auth?email={email}&secret={hash}`
    - Verification: Extract email and secret from request body, match secret with stored hash

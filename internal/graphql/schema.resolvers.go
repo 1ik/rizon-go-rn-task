@@ -10,12 +10,24 @@ import (
 	"rizon-test-task/internal/graphql/generated"
 )
 
+// RequestEmailAuthLink is the resolver for the requestEmailAuthLink field.
+func (r *mutationResolver) RequestEmailAuthLink(ctx context.Context, email string) (bool, error) {
+	if err := r.App.GenerateEmailAuthLink(ctx, email); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Hello is the resolver for the hello field.
 func (r *queryResolver) Hello(ctx context.Context) (string, error) {
 	return r.App.Hello(ctx)
 }
 
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

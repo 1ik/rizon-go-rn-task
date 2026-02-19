@@ -38,8 +38,11 @@ func main() {
 	// Create repository
 	userRepo := postgres.NewUserRepository(db)
 
+	// Load auth configuration
+	authCfg := config.GetAuthConfig()
+
 	// Initialize app with dependencies
-	application := app.New(userRepo, store)
+	application := app.New(userRepo, store, authCfg)
 	defer application.Close()
 
 	resolver := graphql.NewResolver(application)
@@ -66,6 +69,42 @@ func main() {
 		fmt.Fprintf(w, `{"status":"ok"}`)
 	})
 
+	// Email auth verification endpoint
+	http.HandleFunc("/"+authCfg.EmailAuthEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		// Only allow GET requests
+		if r.Method != http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(w, `{"error":"method not allowed"}`)
+			return
+		}
+
+		// Extract email and secret from query parameters
+		email := r.URL.Query().Get("email")
+		secret := r.URL.Query().Get("secret")
+
+		if email == "" || secret == "" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `{"error":"email and secret are required"}`)
+			return
+		}
+
+		// Verify email auth
+		ctx := r.Context()
+		if err := application.VerifyEmailAuth(ctx, email, secret); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintf(w, `{"error":"%s"}`, err.Error())
+			return
+		}
+
+		// Verification successful
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"verified","email":"%s"}`, email)
+	})
+
 	// GraphQL endpoint with CORS
 	http.Handle("/graphql", c.Handler(graphqlHandler))
 
@@ -81,6 +120,7 @@ func main() {
 	fmt.Println("Endpoints:")
 	fmt.Printf("  GET http://localhost:%s/health\n", cfg.Port)
 	fmt.Printf("  POST http://localhost:%s/graphql\n", cfg.Port)
+	fmt.Printf("  GET http://localhost:%s/%s?email=<email>&secret=<hash> (Email Auth Verification)\n", cfg.Port, authCfg.EmailAuthEndpoint)
 	fmt.Printf("  GET http://localhost:%s/sandbox (Apollo Sandbox - Local)\n", cfg.Port)
 	fmt.Printf("  GET http://localhost:%s/ (GraphQL Playground)\n", cfg.Port)
 
