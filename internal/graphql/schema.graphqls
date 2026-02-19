@@ -1,8 +1,18 @@
 type Query {
   hello: String!
+  me: User!
 }
 
 type Mutation {
   requestEmailAuthLink(email: String!): Boolean!
   loginWithEmailAndSecret(email: String!, secret: String!): String!
 }
+
+type User {
+  id: ID!
+  email: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+scalar Time

@@ -8,10 +8,11 @@ package graphql
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
-
 	"rizon-test-task/internal/app"
 	"rizon-test-task/internal/graphql/generated"
+	"rizon-test-task/internal/graphql/model"
 )
 
 // RequestEmailAuthLink is the resolver for the requestEmailAuthLink field.
@@ -43,6 +44,28 @@ func (r *mutationResolver) LoginWithEmailAndSecret(ctx context.Context, email st
 // Hello is the resolver for the hello field.
 func (r *queryResolver) Hello(ctx context.Context) (string, error) {
 	return r.App.Hello(ctx)
+}
+
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+	user, err := r.App.GetCurrentUser(ctx)
+	if err != nil {
+		// Check for authentication errors
+		if errors.Is(err, app.ErrUnauthorized) {
+			return nil, err
+		}
+		// Log unexpected errors for debugging
+		log.Printf("Error: failed to get current user: %v", err)
+		return nil, err
+	}
+
+	// Convert models.User to GraphQL model.User
+	return &model.User{
+		ID:        fmt.Sprintf("%d", user.ID),
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

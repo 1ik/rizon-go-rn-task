@@ -7,14 +7,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"rizon-test-task/internal/config"
 	"rizon-test-task/internal/email"
 	"rizon-test-task/internal/message_broker"
 
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/joho/godotenv"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func main() {
@@ -122,17 +121,17 @@ func processEmailJob(ctx context.Context, emailSender email.EmailSender, msg amq
 		return
 	}
 
-	log.Printf("Processing email job: %s -> %s", job.To, job.Subject)
+	log.Printf("Processing email job: %s -> %s", job.To, job.Subject, job.Body)
 
 	// Send email with timeout
-	emailCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+	// emailCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	// defer cancel()
 
-	if err := emailSender.SendEmail(emailCtx, job.To, job.Subject, job.Body); err != nil {
-		log.Printf("Error: failed to send email to %s: %v", job.To, err)
-		log.Printf("Message will be redelivered after consumer timeout (1 minute)")
-		return
-	}
+	// if err := emailSender.SendEmail(emailCtx, job.To, job.Subject, job.Body); err != nil {
+	// 	log.Printf("Error: failed to send email to %s: %v", job.To, err)
+	// 	log.Printf("Message will be redelivered after consumer timeout (1 minute)")
+	// 	return
+	// }
 
 	// Acknowledge message
 	if err := msg.Ack(false); err != nil {

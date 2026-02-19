@@ -154,6 +154,50 @@ func (a *appImpl) generateJWT(userID uint, email string) (string, error) {
 	return tokenString, nil
 }
 
+// ValidateJWT validates a JWT token and extracts user ID and email from claims.
+// Returns user ID, email, and error.
+func (a *appImpl) ValidateJWT(ctx context.Context, tokenString string) (uint, string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Validate signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(a.authCfg.JWTSecret), nil
+	})
+
+	if err != nil {
+		return 0, "", fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	if !token.Valid {
+		return 0, "", ErrUnauthorized
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, "", fmt.Errorf("invalid token claims")
+	}
+
+	// Extract user_id
+	userIDStr, ok := claims["user_id"].(string)
+	if !ok {
+		return 0, "", fmt.Errorf("user_id claim not found or invalid")
+	}
+
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid user_id format: %w", err)
+	}
+
+	// Extract email
+	email, ok := claims["email"].(string)
+	if !ok || email == "" {
+		return 0, "", fmt.Errorf("email claim not found or invalid")
+	}
+
+	return uint(userID), email, nil
+}
+
 // publishEmailAuthJob publishes an email authentication job to the message broker.
 // Returns an error if publishing fails.
 func (a *appImpl) publishEmailAuthJob(ctx context.Context, email, authLink string) error {
@@ -168,6 +212,35 @@ func (a *appImpl) publishEmailAuthJob(ctx context.Context, email, authLink strin
 		return fmt.Errorf("failed to publish email job: %w", err)
 	}
 	return nil
+}
+
+// GetCurrentUser retrieves the current authenticated user from the context.
+// The context should contain a JWT token that has been validated by middleware.
+func (a *appImpl) GetCurrentUser(ctx context.Context) (*models.User, error) {
+	// Extract token from context (set by middleware)
+	// Use the same key as middleware: "token"
+	tokenString, ok := ctx.Value("token").(string)
+	if !ok || tokenString == "" {
+		return nil, ErrUnauthorized
+	}
+
+	// Validate JWT and extract user ID
+	userID, _, err := a.ValidateJWT(ctx, tokenString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate token: %w", err)
+	}
+
+	// Fetch user from repository
+	userIDStr := strconv.FormatUint(uint64(userID), 10)
+	user, err := a.userRepo.FindByID(ctx, userIDStr)
+	if err != nil {
+		if err == repository.ErrUserNotFound {
+			return nil, ErrUnauthorized
+		}
+		return nil, fmt.Errorf("failed to find user: %w", err)
+	}
+
+	return user, nil
 }
 
 // isValidEmail performs basic email format validation.

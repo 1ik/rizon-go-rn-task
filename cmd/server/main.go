@@ -87,8 +87,8 @@ func main() {
 		fmt.Fprintf(w, `{"status":"ok"}`)
 	})
 
-	// GraphQL endpoint with CORS
-	http.Handle("/graphql", c.Handler(graphqlHandler))
+	// GraphQL endpoint with CORS and authentication middleware
+	http.Handle("/graphql", c.Handler(graphql.AuthMiddleware(graphqlHandler)))
 
 	// Apollo Sandbox (local)
 	http.HandleFunc("/sandbox", func(w http.ResponseWriter, r *http.Request) {

@@ -7,6 +7,7 @@ import (
 	"rizon-test-task/internal/config"
 	"rizon-test-task/internal/in_memory_storage"
 	"rizon-test-task/internal/message_broker"
+	"rizon-test-task/internal/models"
 	"rizon-test-task/internal/repository"
 )
 
@@ -18,6 +19,8 @@ var (
 	ErrEmailAuthNotFound = errors.New("email auth link not found or expired")
 	// ErrEmailAuthInvalidSecret is returned when the secret doesn't match the stored hash.
 	ErrEmailAuthInvalidSecret = errors.New("invalid secret")
+	// ErrUnauthorized is returned when authentication is required but not provided or invalid.
+	ErrUnauthorized = errors.New("unauthorized")
 )
 
 // App is the application business API. GraphQL and other adapters call only these methods.
@@ -25,6 +28,7 @@ type App interface {
 	Hello(ctx context.Context) (string, error)
 	GenerateEmailAuthLink(ctx context.Context, email string) error
 	EmailAuth(ctx context.Context, email, secret string) (string, error)
+	GetCurrentUser(ctx context.Context) (*models.User, error)
 	Close() error
 }
 
