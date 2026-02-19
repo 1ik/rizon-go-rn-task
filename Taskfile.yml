@@ -79,6 +79,37 @@ tasks:
     cmds:
       - $(go env GOPATH)/bin/gqlgen generate
 
+  # React Native tasks
+  rn:install:
+    desc: Install React Native dependencies
+    dir: cmd/clients/react-native-app
+    cmds:
+      - npm install
+
+  rn:start:
+    desc: Start React Native development server (Expo)
+    dir: cmd/clients/react-native-app
+    cmds:
+      - npx expo start
+
+  rn:ios:
+    desc: Run React Native app on iOS simulator
+    dir: cmd/clients/react-native-app
+    cmds:
+      - npx expo start --ios
+
+  rn:android:
+    desc: Run React Native app on Android emulator
+    dir: cmd/clients/react-native-app
+    cmds:
+      - npx expo start --android
+
+  rn:web:
+    desc: Run React Native app in web browser
+    dir: cmd/clients/react-native-app
+    cmds:
+      - npx expo start --web
+
   # Development tasks
   dev:
     desc: Run development server and worker
