@@ -1,16 +1,27 @@
 type Query {
   hello: String!
   me: User!
+  getUserFeedbackOnDevice(deviceId: String!): Feedback
 }
 
 type Mutation {
   requestEmailAuthLink(email: String!): Boolean!
   loginWithEmailAndSecret(email: String!, secret: String!): String!
+  submitFeedback(deviceId: String!, content: String!): Boolean!
 }
 
 type User {
   id: ID!
   email: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type Feedback {
+  id: ID!
+  userId: ID!
+  deviceId: String!
+  content: String!
   createdAt: Time!
   updatedAt: Time!
 }

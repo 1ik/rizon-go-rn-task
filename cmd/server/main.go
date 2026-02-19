@@ -43,8 +43,9 @@ func main() {
 	}
 	defer in_memory_storage.Close()
 
-	// Create repository
+	// Create repositories
 	userRepo := postgres.NewUserRepository(db)
+	feedbackRepo := postgres.NewFeedbackRepository(db)
 
 	// Load auth configuration (pass server config for BaseURL)
 	authCfg := config.GetAuthConfig(cfg)
@@ -60,7 +61,7 @@ func main() {
 	defer messageBroker.Close()
 
 	// Initialize app with dependencies
-	application := app.New(userRepo, store, authCfg, messageBroker)
+	application := app.New(userRepo, feedbackRepo, store, authCfg, messageBroker)
 	defer application.Close()
 
 	resolver := graphql.NewResolver(application)

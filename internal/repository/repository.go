@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound     = errors.New("user not found")
+	ErrFeedbackNotFound = errors.New("feedback not found")
 )
 
 // UserRepository defines operations for user data access.
@@ -21,4 +22,10 @@ type UserRepository interface {
 type LoginRepository interface {
 	// Add login-related methods here as needed
 	// Example: StoreMagicLink(ctx, email, hash, expiresAt) error
+}
+
+// FeedbackRepository defines operations for feedback data access.
+type FeedbackRepository interface {
+	Create(ctx context.Context, feedback *models.Feedback) error
+	GetByUserIDAndDeviceID(ctx context.Context, userID string, deviceID string) (*models.Feedback, error)
 }

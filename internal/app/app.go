@@ -21,6 +21,8 @@ var (
 	ErrEmailAuthInvalidSecret = errors.New("invalid secret")
 	// ErrUnauthorized is returned when authentication is required but not provided or invalid.
 	ErrUnauthorized = errors.New("unauthorized")
+	// ErrFeedbackAlreadySubmitted is returned when feedback has already been submitted for the user+device combination.
+	ErrFeedbackAlreadySubmitted = errors.New("feedback already submitted for this device")
 )
 
 // App is the application business API. GraphQL and other adapters call only these methods.
@@ -29,12 +31,15 @@ type App interface {
 	GenerateEmailAuthLink(ctx context.Context, email string) error
 	EmailAuth(ctx context.Context, email, secret string) (string, error)
 	GetCurrentUser(ctx context.Context) (*models.User, error)
+	SubmitFeedback(ctx context.Context, deviceID, content string) error
+	GetUserFeedbackOnDevice(ctx context.Context, deviceID string) (*models.Feedback, error)
 	Close() error
 }
 
 // appImpl holds wired dependencies and implements App.
 type appImpl struct {
 	userRepo      repository.UserRepository
+	feedbackRepo  repository.FeedbackRepository
 	store         in_memory_storage.Store
 	authCfg       *config.AuthConfig
 	messageBroker message_broker.MessageBroker
@@ -42,9 +47,10 @@ type appImpl struct {
 
 // New creates the app with provided dependencies.
 // Returns the App interface. Call Close() when shutting down.
-func New(userRepo repository.UserRepository, store in_memory_storage.Store, authCfg *config.AuthConfig, messageBroker message_broker.MessageBroker) App {
+func New(userRepo repository.UserRepository, feedbackRepo repository.FeedbackRepository, store in_memory_storage.Store, authCfg *config.AuthConfig, messageBroker message_broker.MessageBroker) App {
 	return &appImpl{
 		userRepo:      userRepo,
+		feedbackRepo:  feedbackRepo,
 		store:         store,
 		authCfg:       authCfg,
 		messageBroker: messageBroker,
