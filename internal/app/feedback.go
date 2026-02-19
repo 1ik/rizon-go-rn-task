@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"rizon-test-task/internal/models"
@@ -58,6 +59,13 @@ func (a *appImpl) SubmitFeedback(ctx context.Context, deviceID, content string) 
 		return fmt.Errorf("failed to create feedback: %w", err)
 	}
 
+	// Publish Slack job after successful feedback creation
+	// Handle errors gracefully - log but don't fail feedback creation
+	if err := a.publishSlackJob(ctx, user.Email, deviceID, content, feedback.ID); err != nil {
+		log.Printf("Warning: failed to publish slack job for feedback ID %d: %v", feedback.ID, err)
+		// Don't return error - feedback was successfully created
+	}
+
 	return nil
 }
 
@@ -86,4 +94,13 @@ func (a *appImpl) GetUserFeedbackOnDevice(ctx context.Context, deviceID string) 
 	}
 
 	return feedback, nil
+}
+
+// publishSlackJob publishes a Slack notification job to the message broker.
+// Returns an error if publishing fails.
+func (a *appImpl) publishSlackJob(ctx context.Context, userEmail, deviceID, content string, feedbackID uint) error {
+	if err := a.messageBroker.PublishSlackJob(ctx, userEmail, deviceID, content, feedbackID); err != nil {
+		return fmt.Errorf("failed to publish slack job: %w", err)
+	}
+	return nil
 }

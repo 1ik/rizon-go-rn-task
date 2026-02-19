@@ -13,6 +13,7 @@ import (
 
 const (
 	emailQueueName = "email_jobs"
+	slackQueueName = "slack_jobs"
 )
 
 // EmailJob represents an email job message
@@ -20,6 +21,14 @@ type EmailJob struct {
 	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`
+}
+
+// SlackJob represents a Slack job message
+type SlackJob struct {
+	UserEmail  string `json:"user_email"`
+	DeviceID   string `json:"device_id"`
+	Content    string `json:"content"`
+	FeedbackID uint   `json:"feedback_id"`
 }
 
 // rabbitMQBroker implements MessageBroker using RabbitMQ
@@ -44,7 +53,7 @@ func NewRabbitMQBroker(cfg *config.RabbitMQConfig) (MessageBroker, error) {
 		return nil, fmt.Errorf("failed to open channel: %w", err)
 	}
 
-	// Declare queue (idempotent - will create if doesn't exist)
+	// Declare email queue (idempotent - will create if doesn't exist)
 	// Configure consumer timeout for delayed redelivery on failures
 	_, err = channel.QueueDeclare(
 		emailQueueName, // name
@@ -61,10 +70,29 @@ func NewRabbitMQBroker(cfg *config.RabbitMQConfig) (MessageBroker, error) {
 	if err != nil {
 		channel.Close()
 		conn.Close()
-		return nil, fmt.Errorf("failed to declare queue: %w", err)
+		return nil, fmt.Errorf("failed to declare email queue: %w", err)
 	}
 
-	log.Printf("RabbitMQ connected: %s (queue: %s)", url, emailQueueName)
+	// Declare Slack queue (idempotent - will create if doesn't exist)
+	_, err = channel.QueueDeclare(
+		slackQueueName, // name
+		true,           // durable
+		false,          // delete when unused
+		false,          // exclusive
+		false,          // no-wait
+		amqp.Table{
+			// Consumer timeout: 1 minute (60000 milliseconds)
+			// If a message is not acked within this time, RabbitMQ will redeliver it
+			"x-consumer-timeout": 60000, // 1 minute in milliseconds
+		},
+	)
+	if err != nil {
+		channel.Close()
+		conn.Close()
+		return nil, fmt.Errorf("failed to declare slack queue: %w", err)
+	}
+
+	log.Printf("RabbitMQ connected: %s (queues: %s, %s)", url, emailQueueName, slackQueueName)
 
 	return &rabbitMQBroker{
 		conn:    conn,
@@ -122,7 +150,47 @@ func (r *rabbitMQBroker) Close() error {
 	return nil
 }
 
+// PublishSlackJob publishes a Slack job to the queue
+func (r *rabbitMQBroker) PublishSlackJob(ctx context.Context, userEmail, deviceID, content string, feedbackID uint) error {
+	job := SlackJob{
+		UserEmail:  userEmail,
+		DeviceID:   deviceID,
+		Content:    content,
+		FeedbackID: feedbackID,
+	}
+
+	bodyBytes, err := json.Marshal(job)
+	if err != nil {
+		return fmt.Errorf("failed to marshal slack job: %w", err)
+	}
+
+	err = r.channel.PublishWithContext(
+		ctx,
+		"",              // exchange
+		slackQueueName,  // routing key (queue name)
+		false,           // mandatory
+		false,           // immediate
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent, // Make message persistent
+			ContentType:  "application/json",
+			Body:         bodyBytes,
+		},
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to publish slack job: %w", err)
+	}
+
+	log.Printf("Published slack job to queue: %s -> feedback ID: %d", slackQueueName, feedbackID)
+	return nil
+}
+
 // GetEmailQueueName returns the email queue name (for workers)
 func GetEmailQueueName() string {
 	return emailQueueName
+}
+
+// GetSlackQueueName returns the Slack queue name (for workers)
+func GetSlackQueueName() string {
+	return slackQueueName
 }
