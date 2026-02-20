@@ -79,40 +79,40 @@ tasks:
     cmds:
       - $(go env GOPATH)/bin/gqlgen generate
 
-  # React Native tasks
+  # React Native tasks (TypeScript app in rn-app)
   rn:install:
     desc: Install React Native dependencies
-    dir: cmd/clients/react-native-app
+    dir: cmd/clients/rn-app
     cmds:
       - npm install
 
   rn:start:
     desc: Start React Native development server (Expo)
-    dir: cmd/clients/react-native-app
+    dir: cmd/clients/rn-app
     cmds:
       - npx expo start
 
   rn:ios:
     desc: Run React Native app on iOS simulator
-    dir: cmd/clients/react-native-app
+    dir: cmd/clients/rn-app
     cmds:
       - npx expo start --ios
 
   rn:android:
     desc: Run React Native app on Android emulator
-    dir: cmd/clients/react-native-app
+    dir: cmd/clients/rn-app
     cmds:
       - npx expo start --android
 
   rn:web:
     desc: Run React Native app in web browser
-    dir: cmd/clients/react-native-app
+    dir: cmd/clients/rn-app
     cmds:
       - npx expo start --web
 
   rn:codegen:
     desc: Generate GraphQL types and React hooks from endpoint
-    dir: cmd/clients/react-native-app
+    dir: cmd/clients/rn-app
     cmds:
       - npm run codegen
 
