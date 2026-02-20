@@ -110,6 +110,12 @@ tasks:
     cmds:
       - npx expo start --web
 
+  rn:codegen:
+    desc: Generate GraphQL types and React hooks from endpoint
+    dir: cmd/clients/react-native-app
+    cmds:
+      - npm run codegen
+
   # Development tasks
   dev:
     desc: Run development server and worker

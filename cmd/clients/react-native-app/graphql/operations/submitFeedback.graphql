@@ -1,0 +1,3 @@
+mutation SubmitFeedback($deviceId: String!, $content: String!) {
+  submitFeedback(deviceId: $deviceId, content: $content)
+}

@@ -1,0 +1,10 @@
+query GetUserFeedbackOnDevice($deviceId: String!) {
+  getUserFeedbackOnDevice(deviceId: $deviceId) {
+    id
+    userId
+    deviceId
+    content
+    createdAt
+    updatedAt
+  }
+}

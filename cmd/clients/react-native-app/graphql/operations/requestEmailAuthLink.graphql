@@ -1,0 +1,3 @@
+mutation RequestEmailAuthLink($email: String!) {
+  requestEmailAuthLink(email: $email)
+}
