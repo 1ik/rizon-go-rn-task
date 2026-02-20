@@ -1,32 +1,62 @@
-import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
-import React, { useCallback, useMemo, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Button, Text } from 'react-native-paper';
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetScrollView,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
+import FeedbackFormStep from './FeedbackFormStep';
+import InitialQuestionStep from './InitialQuestionStep';
+import ReviewPromptStep from './ReviewPromptStep';
+
+const SLIDE_DURATION = 300;
+const HORIZONTAL_PADDING = 24;
+
+type Step = 0 | 1 | 2; // 0 = initial, 1 = feedback, 2 = review
 
 /**
- * Example onboarding / feedback bottom sheet component.
- * Uses @gorhom/bottom-sheet for smooth gesture interactions.
+ * Multi-step onboarding / feedback bottom sheet component.
+ * Uses @gorhom/bottom-sheet with animated slide transitions between steps.
  */
 export default function OnboardingBottomSheet() {
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const { width } = useWindowDimensions();
+  const contentWidth = width - HORIZONTAL_PADDING * 2;
+  const [step, setStep] = useState<Step>(0);
+  const slideProgress = useRef(new Animated.Value(0)).current;
 
-  // Define snap points (25%, 50%, 90% of screen height)
-  const snapPoints = useMemo(() => ['25%', '50%', '90%'], []);
+  // Define snap points: Index 0 = 40%, Index 1 = 50%, Index 2 = 90%
+  const snapPoints = useMemo(() => ['40%', '90%'], []);
 
-  // Handle sheet changes
-  const handleSheetChanges = useCallback((index: number) => {
-    console.log('Bottom sheet index changed:', index);
+  // Animate slide progress when step changes
+  useEffect(() => {
+    Animated.timing(slideProgress, {
+      toValue: step,
+      duration: SLIDE_DURATION,
+      useNativeDriver: true,
+    }).start();
+  }, [step, slideProgress]);
+
+  // Handler to expand sheet to 90% (index 2)
+  const handleExpandSheet = useCallback(() => {
+    bottomSheetRef.current?.snapToIndex(2);
   }, []);
 
-  // Handle close button press
-  const handleClose = useCallback(() => {
-    bottomSheetRef.current?.close();
+  // Navigation handlers
+  const handleYesLovingIt = useCallback(() => {
+  
+    setStep(1);
+  }, [handleExpandSheet]);
+
+  const handleNotYet = useCallback(() => {
+    setStep(2);
   }, []);
 
-  // Handle expand button press
-  const handleExpand = useCallback(() => {
-    bottomSheetRef.current?.expand();
-  }, []);
+  // Interpolation for sliding the entire row
+  const sliderTranslateX = slideProgress.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [0, -contentWidth, -contentWidth * 2],
+  });
 
   // Render backdrop with opacity
   const renderBackdrop = useCallback(
@@ -44,62 +74,43 @@ export default function OnboardingBottomSheet() {
   return (
     <BottomSheet
       ref={bottomSheetRef}
-      index={0} // Start at first snap point (25%)
+      index={0}
       snapPoints={snapPoints}
-      onChange={handleSheetChanges}
+      animateOnMount={true}
       enablePanDownToClose
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.bottomSheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
+      keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
     >
       <BottomSheetView style={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text variant="headlineSmall" style={styles.title}>
-            Welcome! 👋
-          </Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            This is an example bottom sheet component
-          </Text>
-        </View>
-
-        <View style={styles.body}>
-          <Text variant="bodyLarge" style={styles.description}>
-            You can drag the handle to resize the sheet, or use the buttons below to control it programmatically.
-          </Text>
-
-          <View style={styles.features}>
-            <Text variant="bodyMedium" style={styles.featureText}>
-              ✓ Smooth gesture interactions
-            </Text>
-            <Text variant="bodyMedium" style={styles.featureText}>
-              ✓ Multiple snap points
-            </Text>
-            <Text variant="bodyMedium" style={styles.featureText}>
-              ✓ Keyboard handling support
-            </Text>
-            <Text variant="bodyMedium" style={styles.featureText}>
-              ✓ Scrollable content support
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.actions}>
-          <Button
-            mode="contained"
-            onPress={handleExpand}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
+        <View style={styles.sliderWrapper}>
+          <Animated.View
+            style={[
+              styles.sliderRow,
+              { width: contentWidth * 3 },
+              { transform: [{ translateX: sliderTranslateX }] },
+            ]}
           >
-            Expand Sheet
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={handleClose}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-          >
-            Close
-          </Button>
+            <View style={[styles.panel, { width: contentWidth }]}>
+              <InitialQuestionStep
+                onYesLovingIt={handleYesLovingIt}
+                onNotYet={handleNotYet}
+              />
+            </View>
+            <BottomSheetScrollView
+              style={[styles.panel, { width: contentWidth }]}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <FeedbackFormStep onInputFocus={handleExpandSheet} />
+            </BottomSheetScrollView>
+            <View style={[styles.panel, { width: contentWidth }]}>
+              <ReviewPromptStep />
+            </View>
+          </Animated.View>
         </View>
       </BottomSheetView>
     </BottomSheet>
@@ -119,45 +130,22 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: HORIZONTAL_PADDING,
     paddingBottom: 32,
   },
-  header: {
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  title: {
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: '#666',
-    textAlign: 'center',
-  },
-  body: {
+  sliderWrapper: {
     flex: 1,
-    marginBottom: 24,
+    overflow: 'hidden',
   },
-  description: {
-    color: '#333',
-    marginBottom: 20,
-    lineHeight: 22,
+  sliderRow: {
+    flexDirection: 'row',
+    flex: 1,
   },
-  features: {
-    gap: 12,
+  panel: {
+    flex: 1,
   },
-  featureText: {
-    color: '#555',
-    lineHeight: 20,
-  },
-  actions: {
-    gap: 12,
-  },
-  button: {
-    borderRadius: 8,
-  },
-  buttonContent: {
-    paddingVertical: 6,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
 });
