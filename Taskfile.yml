@@ -92,17 +92,23 @@ tasks:
     cmds:
       - npx expo start
 
-  rn:ios:
-    desc: Run React Native app on iOS simulator
+  rn:start:clear:
+    desc: Start React Native dev server with cleared cache
     dir: cmd/clients/rn-app
     cmds:
-      - npx expo start --ios
+      - npx expo start --clear
+
+  rn:ios:
+    desc: Run React Native app on iOS simulator (rebuilds native code)
+    dir: cmd/clients/rn-app
+    cmds:
+      - npx expo run:ios
 
   rn:android:
-    desc: Run React Native app on Android emulator
+    desc: Run React Native app on Android emulator (rebuilds native code)
     dir: cmd/clients/rn-app
     cmds:
-      - npx expo start --android
+      - npx expo run:android
 
   rn:web:
     desc: Run React Native app in web browser
