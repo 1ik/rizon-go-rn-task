@@ -61,12 +61,15 @@ func (a *appImpl) GenerateEmailAuthLink(ctx context.Context, email string) error
 		return fmt.Errorf("failed to store email auth hash: %w", err)
 	}
 
-	// Build full URL with endpoint: {baseURL}/{endpoint}?email={email}&secret={hash}
+	// Build deep link URL: rizon://email-auth?email={email}&secret={hash}
 	values := url.Values{}
 	values.Set("email", email)
 	values.Set("secret", hash)
-	path := "/" + a.authCfg.EmailAuthEndpoint + "?" + values.Encode()
-	uri := a.authCfg.BaseURL + path
+	uri := "rizon://" + a.authCfg.EmailAuthEndpoint + "?" + values.Encode()
+
+	// Log the generated link and xcrun command for manual testing
+	log.Printf("Generated email auth link: %s", uri)
+	log.Printf("Test command: xcrun simctl openurl booted \"%s\"", uri)
 
 	// Publish email job to message broker
 	if err := a.publishEmailAuthJob(ctx, email, uri); err != nil {
@@ -130,6 +133,13 @@ func (a *appImpl) EmailAuth(ctx context.Context, email, secret string) (string, 
 	token, err := a.generateJWT(user.ID, user.Email)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate JWT: %w", err)
+	}
+
+	// Delete email from Redis after successful authentication
+	// This prevents reuse of the same secret and enforces one-time use
+	if err := a.store.Delete(ctx, email); err != nil {
+		// Log error but don't fail authentication - token is already generated
+		log.Printf("Warning: failed to delete email auth entry from Redis: %v", err)
 	}
 
 	return token, nil

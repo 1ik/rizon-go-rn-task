@@ -37,7 +37,7 @@ func GetAuthConfig(serverCfg *ServerConfig) *AuthConfig {
 
 	return &AuthConfig{
 		EmailAuthSalt:       salt,
-		EmailAuthExpiration: 1 * time.Minute,
+		EmailAuthExpiration: 5 * time.Minute,
 		EmailAuthEndpoint:   endpoint,
 		BaseURL:             baseURL,
 		JWTSecret:           jwtSecret,

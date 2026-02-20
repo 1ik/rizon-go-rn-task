@@ -4,9 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { apolloClient } from './apolloClient';
-import { AuthProvider } from './context/AuthContext';
 import Scaffold from './components/Scaffold';
 import AuthenticatedView from './components/AuthenticatedView';
+import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
   return (
