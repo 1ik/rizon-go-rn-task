@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
   createContext,
   useCallback,
@@ -12,6 +13,9 @@ import {
   useGetUserFeedbackOnDeviceLazyQuery,
   useSubmitFeedbackMutation,
 } from '../graphql/generated/graphql';
+import { useAuth } from './AuthContext';
+
+const getReviewStorageKey = (email: string) => `@rizon:has_left_review:${email}`;
 
 // Dynamically import expo-application for platform-specific device IDs
 async function getAndroidId(): Promise<string | null> {
@@ -57,17 +61,55 @@ type FeedbackContextValue = {
   feedback: Feedback | null;
   isLoading: boolean;
   error: string | null;
+  isSubmitting: boolean;
+  submissionError: string | null;
+  hasLeftReview: boolean;
+  isOnBoardingComplete: boolean;
   submitFeedback: (content: string) => Promise<void>;
+  submitReview: (email: string) => Promise<void>;
   refetchFeedback: () => Promise<void>;
+  clearSubmissionError: () => void;
 };
 
 const FeedbackContext = createContext<FeedbackContextValue | null>(null);
 
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [hasLeftReview, setHasLeftReview] = useState<boolean>(false);
+  const [isOnBoardingComplete, setIsOnBoardingComplete] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsOnBoardingComplete(hasLeftReview || feedback !== null);
+  }, [hasLeftReview, feedback]);
+
+  // Load review status from AsyncStorage for current user
+  useEffect(() => {
+    const loadReviewStatus = async () => {
+      if (!user?.email) {
+        setHasLeftReview(false);
+        return;
+      }
+
+      try {
+        const reviewKey = getReviewStorageKey(user.email);
+        const reviewData = await AsyncStorage.getItem(reviewKey);
+        if (reviewData === 'true') {
+          setHasLeftReview(true);
+        } else {
+          setHasLeftReview(false);
+        }
+      } catch (err) {
+        console.error('Failed to load review status:', err);
+        setHasLeftReview(false);
+      }
+    };
+    loadReviewStatus();
+  }, [user?.email]);
 
   // Get real device ID on mount
   useEffect(() => {
@@ -150,11 +192,11 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!content || content.trim() === '') {
+        setSubmissionError('Please enter your feedback');
         throw new Error('Feedback content cannot be empty');
       }
 
-      setIsLoading(true);
-      setError(null);
+      setSubmissionError(null);
 
       try {
         const result = await submitFeedbackMutation({
@@ -170,10 +212,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
 
         // After successful submission, refetch the feedback
         await fetchFeedback();
+        setSubmissionError(null);
       } catch (err: any) {
         const errorMessage = err?.message || 'Failed to submit feedback';
-        setError(errorMessage);
-        setIsLoading(false);
+        setSubmissionError(errorMessage);
         throw err;
       }
     },
@@ -184,6 +226,23 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     await fetchFeedback();
   }, [fetchFeedback]);
 
+  const clearSubmissionError = useCallback(() => {
+    setSubmissionError(null);
+  }, []);
+
+  const submitReview = useCallback(async (email: string): Promise<void> => {
+    try {
+      // Store review flag for this specific user's email
+      const reviewKey = getReviewStorageKey(email);
+      await AsyncStorage.setItem(reviewKey, 'true');
+
+      setHasLeftReview(true);
+    } catch (err) {
+      console.error('Failed to save review status:', err);
+      throw new Error('Failed to save review status');
+    }
+  }, [user?.email]);
+
   const isLoadingState = isLoading || queryLoading || mutationLoading;
 
   const value = useMemo(
@@ -191,10 +250,28 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       feedback,
       isLoading: isLoadingState,
       error,
+      isSubmitting: mutationLoading,
+      submissionError,
+      hasLeftReview,
+      isOnBoardingComplete,
       submitFeedback,
+      submitReview,
       refetchFeedback,
+      clearSubmissionError,
     }),
-    [feedback, isLoadingState, error, submitFeedback, refetchFeedback]
+    [
+      feedback,
+      isLoadingState,
+      error,
+      mutationLoading,
+      submissionError,
+      hasLeftReview,
+      isOnBoardingComplete,
+      submitFeedback,
+      submitReview,
+      refetchFeedback,
+      clearSubmissionError,
+    ]
   );
 
   return <FeedbackContext.Provider value={value}>{children}</FeedbackContext.Provider>;

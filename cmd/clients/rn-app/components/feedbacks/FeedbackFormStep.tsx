@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
+import { useFeedback } from '../../context/FeedbackContext';
 
 interface FeedbackFormStepProps {
   onInputFocus?: () => void;
@@ -8,6 +9,7 @@ interface FeedbackFormStepProps {
 
 export default function FeedbackFormStep({ onInputFocus }: FeedbackFormStepProps) {
   const [feedback, setFeedback] = useState('');
+  const { submitFeedback, isSubmitting, submissionError, clearSubmissionError } = useFeedback();
 
   const handleInputFocus = () => {
     onInputFocus?.();
@@ -28,16 +30,34 @@ export default function FeedbackFormStep({ onInputFocus }: FeedbackFormStepProps
           numberOfLines={6}
           placeholder="Type your feedback here..."
           value={feedback}
-          onChangeText={setFeedback}
+          onChangeText={(text) => {
+            setFeedback(text);
+            // Clear error when user starts typing
+            if (submissionError) {
+              clearSubmissionError();
+            }
+          }}
           onFocus={handleInputFocus}
           style={styles.input}
           contentStyle={styles.inputContent}
+          error={!!submissionError}
+          disabled={isSubmitting}
         />
+        {submissionError && (
+          <Text variant="bodySmall" style={styles.errorText}>
+            {submissionError}
+          </Text>
+        )}
         <Button
           mode="contained"
-          onPress={() => {}}
+          onPress={() => {
+            submitFeedback(feedback);
+            // Clear input optimistically
+            setFeedback('');
+          }}
           style={styles.button}
-          contentStyle={styles.buttonContent}
+          disabled={isSubmitting || !feedback.trim()}
+          loading={isSubmitting}
         >
           Send feedback
         </Button>
@@ -77,11 +97,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     textAlignVertical: 'top',
   },
-  button: {
-    borderRadius: 8,
-    backgroundColor: '#000000',
+  errorText: {
+    color: '#d32f2f',
+    marginTop: -20,
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
-  buttonContent: {
-    paddingVertical: 8,
+  button: {
+    marginTop: 8,
   },
 });

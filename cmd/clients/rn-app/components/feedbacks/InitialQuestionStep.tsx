@@ -28,15 +28,13 @@ export default function InitialQuestionStep({
             mode="outlined"
             onPress={onNotYet}
             style={styles.button}
-            contentStyle={styles.buttonContent}
           >
             Not yet
           </Button>
           <Button
             mode="contained"
             onPress={onYesLovingIt}
-            style={[styles.button, styles.buttonPrimary]}
-            contentStyle={styles.buttonContent}
+            style={styles.button}
           >
             Yes, loving it
           </Button>
@@ -81,12 +79,6 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    borderRadius: 8,
-  },
-  buttonPrimary: {
-    backgroundColor: '#000000',
-  },
-  buttonContent: {
-    paddingVertical: 8,
+    marginTop: 8,
   },
 });

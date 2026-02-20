@@ -44,12 +44,11 @@ export default function OnboardingBottomSheet() {
 
   // Navigation handlers
   const handleYesLovingIt = useCallback(() => {
-  
-    setStep(1);
-  }, [handleExpandSheet]);
+    setStep(2); // Go to review step (step 2)
+  }, []);
 
   const handleNotYet = useCallback(() => {
-    setStep(2);
+    setStep(1); // Go to feedback step (step 1)
   }, []);
 
   // Interpolation for sliding the entire row
@@ -58,7 +57,7 @@ export default function OnboardingBottomSheet() {
     outputRange: [0, -contentWidth, -contentWidth * 2],
   });
 
-  // Render backdrop with opacity
+  // Render backdrop with opacity (non-interactive to prevent closing)
   const renderBackdrop = useCallback(
     (props: any) => (
       <BottomSheetBackdrop
@@ -66,6 +65,7 @@ export default function OnboardingBottomSheet() {
         disappearsOnIndex={-1}
         appearsOnIndex={0}
         opacity={0.5}
+        pressBehavior="none"
       />
     ),
     []
@@ -77,7 +77,7 @@ export default function OnboardingBottomSheet() {
       index={0}
       snapPoints={snapPoints}
       animateOnMount={true}
-      enablePanDownToClose
+      enablePanDownToClose={false}
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.bottomSheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
