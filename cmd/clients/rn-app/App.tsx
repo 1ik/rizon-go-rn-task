@@ -5,9 +5,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { apolloClient } from './apolloClient';
-import Scaffold from './components/Scaffold';
 import AuthenticatedView from './components/AuthenticatedView';
+import Scaffold from './components/Scaffold';
 import { AuthProvider } from './context/AuthContext';
+import { FeedbackProvider } from './context/FeedbackContext';
 
 export default function App() {
   return (
@@ -19,7 +20,9 @@ export default function App() {
               <View style={styles.container}>
                 <StatusBar style="auto" />
                 <Scaffold>
-                  <AuthenticatedView />
+                  <FeedbackProvider>
+                    <AuthenticatedView />
+                  </FeedbackProvider>
                 </Scaffold>
               </View>
             </AuthProvider>

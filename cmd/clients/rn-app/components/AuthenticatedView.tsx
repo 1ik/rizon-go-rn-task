@@ -8,8 +8,8 @@ export default function AuthenticatedView() {
   return (
     <View style={{ flex: 1 }}>
       <Header />
-      <Greeting />
-      <OnboardingBottomSheet />
+        <Greeting />
+        <OnboardingBottomSheet />
     </View>
   );
 }
