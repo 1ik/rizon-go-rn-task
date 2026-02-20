@@ -90,6 +90,7 @@ func processEmailJob(ctx context.Context, emailSender email.EmailSender, msg amq
 	}
 
 	log.Printf("Processing email job: %s -> %s", job.To, job.Subject)
+	log.Printf("Email body: %s", job.Body)
 
 	// Send email with timeout
 	// emailCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
