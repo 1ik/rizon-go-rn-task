@@ -73,6 +73,14 @@ tasks:
     cmds:
       - ./tools/show-schema.sh
 
+  # Mock generation (gomock)
+  mocks:gen:
+    desc: Generate gomock mocks for app dependencies
+    cmds:
+      - go run go.uber.org/mock/mockgen@latest -source=internal/repository/repository.go -destination=internal/mocks/repository_mock.go -package=mocks
+      - go run go.uber.org/mock/mockgen@latest -source=internal/in_memory_storage/store.go -destination=internal/mocks/store_mock.go -package=mocks
+      - go run go.uber.org/mock/mockgen@latest -source=internal/message_broker/message_broker.go -destination=internal/mocks/message_broker_mock.go -package=mocks
+
   # GraphQL tasks
   gql:gen:
     desc: Generate GraphQL types

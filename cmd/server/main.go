@@ -12,6 +12,7 @@ import (
 	"rizon-test-task/internal/graphql/generated"
 	"rizon-test-task/internal/in_memory_storage"
 	"rizon-test-task/internal/message_broker"
+	"rizon-test-task/internal/middleware"
 	"rizon-test-task/internal/repository/postgres"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -28,6 +29,7 @@ func main() {
 	}
 
 	cfg := config.GetServerConfig()
+	rateLimitCfg := config.GetRateLimitConfig()
 
 	// Initialize database
 	db, err := database.Connect()
@@ -88,8 +90,8 @@ func main() {
 		fmt.Fprintf(w, `{"status":"ok"}`)
 	})
 
-	// GraphQL endpoint with CORS and authentication middleware
-	http.Handle("/graphql", c.Handler(graphql.AuthMiddleware(graphqlHandler)))
+	// GraphQL endpoint: CORS → rate limit → auth → handler
+	http.Handle("/graphql", c.Handler(middleware.RateLimit(rateLimitCfg)(graphql.AuthMiddleware(graphqlHandler))))
 
 	// Apollo Sandbox (local)
 	http.HandleFunc("/sandbox", func(w http.ResponseWriter, r *http.Request) {
