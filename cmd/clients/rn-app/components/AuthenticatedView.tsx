@@ -1,18 +1,18 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useFeedback } from '../context/FeedbackContext';
+import { useOnboarding } from '../context/OnboardingContext';
 import Greeting from './Greeting';
 import Header from './Header';
 import OnboardingBottomSheet from './feedbacks/OnboardingBottomSheet';
 
 export default function AuthenticatedView() {
-  const { feedback, isOnBoardingComplete } = useFeedback();
+  const { hasSeenOnboarding } = useOnboarding();
 
   return (
     <View style={{ flex: 1 }}>
       <Header />
       <Greeting />
-      {!feedback && !isOnBoardingComplete && <OnboardingBottomSheet />}
+      {!hasSeenOnboarding && <OnboardingBottomSheet />}
     </View>
   );
 }

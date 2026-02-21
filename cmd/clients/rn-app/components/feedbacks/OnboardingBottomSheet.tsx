@@ -5,6 +5,7 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useOnboarding } from '../../context/OnboardingContext';
 import FeedbackFormStep from './FeedbackFormStep';
 import InitialQuestionStep from './InitialQuestionStep';
 import ReviewPromptStep from './ReviewPromptStep';
@@ -17,15 +18,28 @@ type Step = 0 | 1 | 2; // 0 = initial, 1 = feedback, 2 = review
 /**
  * Multi-step onboarding / feedback bottom sheet component.
  * Uses @gorhom/bottom-sheet with animated slide transitions between steps.
+ * Marks onboarding as seen when displayed so it only shows once per user.
  */
 export default function OnboardingBottomSheet() {
+  const { markOnboardingSeen } = useOnboarding();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const { width } = useWindowDimensions();
   const contentWidth = width - HORIZONTAL_PADDING * 2;
   const [step, setStep] = useState<Step>(0);
   const slideProgress = useRef(new Animated.Value(0)).current;
 
-  // Define snap points: Index 0 = 40%, Index 1 = 50%, Index 2 = 90%
+  // Mark onboarding as seen when sheet has completely opened (panel animation completed)
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      console.log('sheet changed', index);
+      if (index >= 0) {
+        markOnboardingSeen();
+      }
+    },
+    [markOnboardingSeen]
+  );
+
+  // Define snap points: Index 1 = 50%, Index 2 = 90%
   const snapPoints = useMemo(() => ['40%', '90%'], []);
 
   // Animate slide progress when step changes
@@ -40,6 +54,11 @@ export default function OnboardingBottomSheet() {
   // Handler to expand sheet to 90% (index 2)
   const handleExpandSheet = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(2);
+  }, []);
+
+  // Close sheet programmatically (e.g. after feedback submitted)
+  const handleCloseSheet = useCallback(() => {
+    bottomSheetRef.current?.close();
   }, []);
 
   // Navigation handlers
@@ -78,6 +97,7 @@ export default function OnboardingBottomSheet() {
       snapPoints={snapPoints}
       animateOnMount={true}
       enablePanDownToClose={false}
+      onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.bottomSheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
@@ -105,10 +125,13 @@ export default function OnboardingBottomSheet() {
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
             >
-              <FeedbackFormStep onInputFocus={handleExpandSheet} />
+              <FeedbackFormStep
+                onInputFocus={handleExpandSheet}
+                onFeedbackSubmitted={handleCloseSheet}
+              />
             </BottomSheetScrollView>
             <View style={[styles.panel, { width: contentWidth }]}>
-              <ReviewPromptStep />
+              <ReviewPromptStep onLeaveReviewPressed={handleCloseSheet} />
             </View>
           </Animated.View>
         </View>

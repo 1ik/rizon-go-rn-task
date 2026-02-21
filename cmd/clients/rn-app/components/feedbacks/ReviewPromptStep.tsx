@@ -3,7 +3,7 @@ import React from 'react';
 import { Image, Platform, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
-import { useFeedback } from '../../context/FeedbackContext';
+import { useOnboarding } from '../../context/OnboardingContext';
 
 const APP_STORE_URLS = {
   ios: {
@@ -16,15 +16,19 @@ const APP_STORE_URLS = {
   },
 };
 
-export default function ReviewPromptStep() {
+interface ReviewPromptStepProps {
+  onLeaveReviewPressed?: () => void;
+}
+
+export default function ReviewPromptStep({ onLeaveReviewPressed }: ReviewPromptStepProps) {
   const step3Image = require('../../assets/step3.png');
   const { user } = useAuth();
-  const { submitReview } = useFeedback();
+  const { submitReview } = useOnboarding();
 
   const handleLeaveReview = async () => {
     const urls =
       Platform.OS === 'ios' ? APP_STORE_URLS.ios : APP_STORE_URLS.android;
-    
+
     try {
       // Try to open in the app store app first
       const canOpen = await Linking.canOpenURL(urls.app);
@@ -39,6 +43,7 @@ export default function ReviewPromptStep() {
       if (user?.email) {
         await submitReview(user.email);
       }
+      onLeaveReviewPressed?.();
     } catch (error) {
       // If app URL fails, try web URL as fallback
       try {
@@ -47,6 +52,7 @@ export default function ReviewPromptStep() {
         if (user?.email) {
           await submitReview(user.email);
         }
+        onLeaveReviewPressed?.();
       } catch (webError) {
         console.error('Failed to open app store:', webError);
       }

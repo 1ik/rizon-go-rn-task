@@ -8,7 +8,7 @@ import { apolloClient } from './apolloClient';
 import AuthenticatedView from './components/AuthenticatedView';
 import Scaffold from './components/Scaffold';
 import { AuthProvider } from './context/AuthContext';
-import { FeedbackProvider } from './context/FeedbackContext';
+import { OnboardingProvider } from './context/OnboardingContext';
 
 export default function App() {
   return (
@@ -20,9 +20,9 @@ export default function App() {
               <View style={styles.container}>
                 <StatusBar style="auto" />
                 <Scaffold>
-                  <FeedbackProvider>
+                  <OnboardingProvider>
                     <AuthenticatedView />
-                  </FeedbackProvider>
+                  </OnboardingProvider>
                 </Scaffold>
               </View>
             </AuthProvider>

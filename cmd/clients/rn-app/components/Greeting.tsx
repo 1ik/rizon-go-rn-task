@@ -2,12 +2,10 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Avatar, Text } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
-import { useFeedback } from '../context/FeedbackContext';
 
 export default function Greeting() {
   const { user } = useAuth();
-  const { feedback } = useFeedback();
-  
+
   if (!user?.email) return null;
 
   // Get initials from email for avatar
@@ -22,8 +20,8 @@ export default function Greeting() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Avatar.Text 
-          size={56} 
+        <Avatar.Text
+          size={56}
           label={getInitials(user.email)}
           style={styles.avatar}
           labelStyle={styles.avatarLabel}
@@ -32,16 +30,6 @@ export default function Greeting() {
           {user.email}
         </Text>
       </View>
-      {feedback && (
-        <View style={styles.feedbackContainer}>
-          <Text variant="bodySmall" style={styles.feedbackLabel}>
-            Your feedback
-          </Text>
-          <Text variant="bodyMedium" style={styles.feedbackContent}>
-            {feedback.content}
-          </Text>
-        </View>
-      )}
       <View style={styles.accentLine} />
     </View>
   );
@@ -70,22 +58,6 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     fontWeight: '400',
     letterSpacing: 0.2,
-  },
-  feedbackContainer: {
-    marginTop: 24,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    width: '100%',
-  },
-  feedbackLabel: {
-    color: '#666',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  feedbackContent: {
-    color: '#1a1a1a',
-    lineHeight: 20,
   },
   accentLine: {
     width: 40,

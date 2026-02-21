@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import AuthenticatingScreen from './auth/AuthenticatingScreen';
 import LoginForm from './auth/LoginForm';

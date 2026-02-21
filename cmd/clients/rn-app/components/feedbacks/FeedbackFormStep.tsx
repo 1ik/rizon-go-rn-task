@@ -1,18 +1,34 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
-import { useFeedback } from '../../context/FeedbackContext';
+import { useOnboarding } from '../../context/OnboardingContext';
 
 interface FeedbackFormStepProps {
   onInputFocus?: () => void;
+  onFeedbackSubmitted?: () => void;
 }
 
-export default function FeedbackFormStep({ onInputFocus }: FeedbackFormStepProps) {
+export default function FeedbackFormStep({
+  onInputFocus,
+  onFeedbackSubmitted,
+}: FeedbackFormStepProps) {
   const [feedback, setFeedback] = useState('');
-  const { submitFeedback, isSubmitting, submissionError, clearSubmissionError } = useFeedback();
+  const { submitFeedback, isSubmitting, submissionError, clearSubmissionError } = useOnboarding();
 
   const handleInputFocus = () => {
     onInputFocus?.();
+  };
+
+  const handleSubmit = async () => {
+    const text = feedback.trim();
+    if (!text || isSubmitting) return;
+    try {
+      await submitFeedback(text);
+      setFeedback('');
+      onFeedbackSubmitted?.();
+    } catch {
+      // submissionError is set by context
+    }
   };
 
   return (
@@ -50,11 +66,7 @@ export default function FeedbackFormStep({ onInputFocus }: FeedbackFormStepProps
         )}
         <Button
           mode="contained"
-          onPress={() => {
-            submitFeedback(feedback);
-            // Clear input optimistically
-            setFeedback('');
-          }}
+          onPress={handleSubmit}
           style={styles.button}
           disabled={isSubmitting || !feedback.trim()}
           loading={isSubmitting}
