@@ -44,9 +44,7 @@ func (r *mutationResolver) LoginWithEmailAndSecret(ctx context.Context, email st
 // SubmitFeedback is the resolver for the submitFeedback field.
 func (r *mutationResolver) SubmitFeedback(ctx context.Context, deviceID string, content string) (bool, error) {
 	if err := r.App.SubmitFeedback(ctx, deviceID, content); err != nil {
-		// Check for known sentinel errors - these are user-friendly and can be returned as-is
-		if errors.Is(err, app.ErrUnauthorized) ||
-			errors.Is(err, app.ErrFeedbackAlreadySubmitted) {
+		if errors.Is(err, app.ErrUnauthorized) {
 			return false, err
 		}
 
@@ -82,35 +80,6 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-	}, nil
-}
-
-// GetUserFeedbackOnDevice is the resolver for the getUserFeedbackOnDevice field.
-func (r *queryResolver) GetUserFeedbackOnDevice(ctx context.Context, deviceID string) (*model.Feedback, error) {
-	feedback, err := r.App.GetUserFeedbackOnDevice(ctx, deviceID)
-	if err != nil {
-		// Check for authentication errors
-		if errors.Is(err, app.ErrUnauthorized) {
-			return nil, err
-		}
-		// Log unexpected errors for debugging
-		log.Printf("Error: failed to get user feedback on device: %v", err)
-		return nil, err
-	}
-
-	// If feedback is nil (not found), return nil (GraphQL query can return null)
-	if feedback == nil {
-		return nil, nil
-	}
-
-	// Convert models.Feedback to GraphQL model.Feedback
-	return &model.Feedback{
-		ID:        fmt.Sprintf("%d", feedback.ID),
-		UserID:    fmt.Sprintf("%d", feedback.UserID),
-		DeviceID:  feedback.DeviceID,
-		Content:   feedback.Content,
-		CreatedAt: feedback.CreatedAt,
-		UpdatedAt: feedback.UpdatedAt,
 	}, nil
 }
 

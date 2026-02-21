@@ -1,7 +1,6 @@
 type Query {
   hello: String!
   me: User!
-  getUserFeedbackOnDevice(deviceId: String!): Feedback
 }
 
 type Mutation {
@@ -13,15 +12,6 @@ type Mutation {
 type User {
   id: ID!
   email: String!
-  createdAt: Time!
-  updatedAt: Time!
-}
-
-type Feedback {
-  id: ID!
-  userId: ID!
-  deviceId: String!
-  content: String!
   createdAt: Time!
   updatedAt: Time!
 }

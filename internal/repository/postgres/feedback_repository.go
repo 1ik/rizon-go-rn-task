@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"rizon-test-task/internal/models"
@@ -26,15 +25,4 @@ func (r *feedbackRepository) Create(ctx context.Context, feedback *models.Feedba
 		return fmt.Errorf("failed to create feedback: %w", err)
 	}
 	return nil
-}
-
-func (r *feedbackRepository) GetByUserIDAndDeviceID(ctx context.Context, userID string, deviceID string) (*models.Feedback, error) {
-	var feedback models.Feedback
-	if err := r.db.WithContext(ctx).Where("user_id = ? AND device_id = ?", userID, deviceID).First(&feedback).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, repository.ErrFeedbackNotFound
-		}
-		return nil, fmt.Errorf("failed to get feedback by user id and device id: %w", err)
-	}
-	return &feedback, nil
 }

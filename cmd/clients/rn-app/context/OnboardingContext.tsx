@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
 import React, {
   createContext,
   useCallback,
@@ -10,7 +11,9 @@ import React, {
 import { useSubmitFeedbackMutation } from '../graphql/generated/graphql';
 import { useAuth } from './AuthContext';
 
-const getReviewStorageKey = (email: string) => `@rizon:has_left_review:${email}`;
+const getDeviceName = (): string =>
+  Device.modelName ?? Device.deviceName ?? 'Unknown device';
+
 const getOnboardingSeenKey = (email: string) => `rizon:has_seen_onboarding:${email}`;
 
 type OnboardingContextValue = {
@@ -21,7 +24,6 @@ type OnboardingContextValue = {
   hasSeenOnboarding: boolean;
   markOnboardingSeen: () => Promise<void>;
   submitFeedback: (content: string) => Promise<void>;
-  submitReview: (email: string) => Promise<void>;
   clearSubmissionError: () => void;
 };
 
@@ -83,7 +85,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       try {
         const result = await submitFeedbackMutation({
           variables: {
-            deviceId: '1234',
+            deviceId: getDeviceName(),
             content: content.trim(),
           },
         });
@@ -107,18 +109,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     setSubmissionError(null);
   }, []);
 
-  const submitReview = useCallback(async (email: string): Promise<void> => {
-    try {
-      // Store review flag for this specific user's email
-      const reviewKey = getReviewStorageKey(email);
-      await AsyncStorage.setItem(reviewKey, 'true');
-
-    } catch (err) {
-      console.error('Failed to save review status:', err);
-      throw new Error('Failed to save review status');
-    }
-  }, [user?.email]);
-
   const isLoadingState = isLoading || mutationLoading;
 
   const value = useMemo(
@@ -130,7 +120,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       hasSeenOnboarding,
       markOnboardingSeen,
       submitFeedback,
-      submitReview,
       clearSubmissionError,
     }),
     [
@@ -141,7 +130,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
       hasSeenOnboarding,
       markOnboardingSeen,
       submitFeedback,
-      submitReview,
       clearSubmissionError,
     ]
   );

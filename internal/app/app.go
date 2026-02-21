@@ -21,8 +21,6 @@ var (
 	ErrEmailAuthInvalidSecret = errors.New("invalid secret")
 	// ErrUnauthorized is returned when authentication is required but not provided or invalid.
 	ErrUnauthorized = errors.New("unauthorized")
-	// ErrFeedbackAlreadySubmitted is returned when feedback has already been submitted for the user+device combination.
-	ErrFeedbackAlreadySubmitted = errors.New("feedback already submitted for this device")
 )
 
 // App is the application business API. GraphQL and other adapters call only these methods.
@@ -32,7 +30,6 @@ type App interface {
 	EmailAuth(ctx context.Context, email, secret string) (string, error)
 	GetCurrentUser(ctx context.Context) (*models.User, error)
 	SubmitFeedback(ctx context.Context, deviceID, content string) error
-	GetUserFeedbackOnDevice(ctx context.Context, deviceID string) (*models.Feedback, error)
 	Close() error
 }
 

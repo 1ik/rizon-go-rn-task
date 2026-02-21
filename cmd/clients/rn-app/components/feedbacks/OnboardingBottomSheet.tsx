@@ -31,10 +31,7 @@ export default function OnboardingBottomSheet() {
   // Mark onboarding as seen when sheet has completely opened (panel animation completed)
   const handleSheetChange = useCallback(
     (index: number) => {
-      console.log('sheet changed', index);
-      if (index >= 0) {
-        markOnboardingSeen();
-      }
+      markOnboardingSeen();
     },
     [markOnboardingSeen]
   );

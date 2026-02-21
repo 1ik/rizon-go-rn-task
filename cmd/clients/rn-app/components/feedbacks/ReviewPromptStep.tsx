@@ -2,18 +2,10 @@ import * as Linking from 'expo-linking';
 import React from 'react';
 import { Image, Platform, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
-import { useAuth } from '../../context/AuthContext';
-import { useOnboarding } from '../../context/OnboardingContext';
 
-const APP_STORE_URLS = {
-  ios: {
-    app: 'itms-apps://itunes.apple.com/app/id6745082515',
-    web: 'https://apps.apple.com/us/app/rizon-stablecoin-finance/id6745082515',
-  },
-  android: {
-    app: 'market://details?id=com.rizon.app',
-    web: 'https://play.google.com/store/apps/details?id=com.rizon.app',
-  },
+const APP_STORE_URLS: Record<string, string> = {
+  ios: 'https://apps.apple.com/us/app/rizon-stablecoin-finance/id6745082515',
+  android: 'https://play.google.com/store/apps/details?id=com.rizon.app',
 };
 
 interface ReviewPromptStepProps {
@@ -22,40 +14,14 @@ interface ReviewPromptStepProps {
 
 export default function ReviewPromptStep({ onLeaveReviewPressed }: ReviewPromptStepProps) {
   const step3Image = require('../../assets/step3.png');
-  const { user } = useAuth();
-  const { submitReview } = useOnboarding();
 
   const handleLeaveReview = async () => {
-    const urls =
-      Platform.OS === 'ios' ? APP_STORE_URLS.ios : APP_STORE_URLS.android;
-
+    const url = APP_STORE_URLS[Platform.OS] ?? APP_STORE_URLS.android;
     try {
-      // Try to open in the app store app first
-      const canOpen = await Linking.canOpenURL(urls.app);
-      if (canOpen) {
-        await Linking.openURL(urls.app);
-      } else {
-        // Fallback to web URL
-        await Linking.openURL(urls.web);
-      }
-
-      // Store review flag with user email
-      if (user?.email) {
-        await submitReview(user.email);
-      }
+      await Linking.openURL(url);
       onLeaveReviewPressed?.();
-    } catch (error) {
-      // If app URL fails, try web URL as fallback
-      try {
-        await Linking.openURL(urls.web);
-        // Store review flag even if we opened web URL
-        if (user?.email) {
-          await submitReview(user.email);
-        }
-        onLeaveReviewPressed?.();
-      } catch (webError) {
-        console.error('Failed to open app store:', webError);
-      }
+    } catch (err) {
+      console.error('Failed to open app store:', err);
     }
   };
 

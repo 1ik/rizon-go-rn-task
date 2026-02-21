@@ -6,15 +6,6 @@ import (
 	"time"
 )
 
-type Feedback struct {
-	ID        string    `json:"id"`
-	UserID    string    `json:"userId"`
-	DeviceID  string    `json:"deviceId"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
 type Mutation struct {
 }
 
