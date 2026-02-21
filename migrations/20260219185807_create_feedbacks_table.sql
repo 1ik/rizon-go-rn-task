@@ -9,9 +9,7 @@ CREATE TABLE feedbacks (
 );
 
 CREATE INDEX idx_feedbacks_user_id ON feedbacks(user_id);
-CREATE INDEX idx_feedbacks_device_id ON feedbacks(device_id);
 
 -- +goose Down
-DROP INDEX IF EXISTS idx_feedbacks_device_id;
 DROP INDEX IF EXISTS idx_feedbacks_user_id;
 DROP TABLE IF EXISTS feedbacks;

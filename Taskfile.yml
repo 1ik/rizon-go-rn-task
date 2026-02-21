@@ -73,6 +73,16 @@ tasks:
     cmds:
       - ./tools/show-schema.sh
 
+  db:dump:users:
+    desc: Dump last 5 users (newest first) to terminal
+    cmds:
+      - ./tools/dump_users.sh
+
+  db:dump:feedback:
+    desc: Dump last 5 feedbacks (newest first) to terminal
+    cmds:
+      - ./tools/dump_feedback.sh
+
   # Mock generation (gomock)
   mocks:gen:
     desc: Generate gomock mocks for app dependencies
