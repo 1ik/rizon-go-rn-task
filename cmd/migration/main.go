@@ -85,7 +85,11 @@ func runUp(dbURL, migrationsDir string) error {
 	if len(results) > 0 {
 		fmt.Printf("✅ Applied %d migration(s) successfully\n", len(results))
 		for _, result := range results {
-			fmt.Printf("  - %s\n", result.Source)
+			path := ""
+			if result.Source != nil {
+				path = result.Source.Path
+			}
+			fmt.Printf("  - %s\n", path)
 		}
 	} else {
 		fmt.Println("✅ No migrations to apply")
@@ -107,7 +111,11 @@ func runDown(dbURL, migrationsDir string) error {
 	}
 
 	if result != nil {
-		fmt.Printf("✅ Rolled back migration: %s\n", result.Source)
+		path := ""
+		if result.Source != nil {
+			path = result.Source.Path
+		}
+		fmt.Printf("✅ Rolled back migration: %s\n", path)
 	} else {
 		fmt.Println("✅ No migrations to rollback")
 	}
